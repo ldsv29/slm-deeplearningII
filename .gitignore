@@ -1,0 +1,7 @@
+.venv/
+checkpoints/
+checkpoints_smoke/
+__pycache__/
+.env
+*.pt
+*.safetensors

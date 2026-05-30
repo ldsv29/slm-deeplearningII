@@ -1,0 +1,9 @@
+torch
+transformers
+datasets
+tiktoken
+accelerate
+huggingface_hub
+matplotlib
+tqdm
+pyyaml
