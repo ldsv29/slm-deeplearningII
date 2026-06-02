@@ -2,6 +2,13 @@ from transformers import LlamaConfig, LlamaForCausalLM
 
 class SLMConfig(LlamaConfig):
     model_type = "slm"
+    
+    # The params as Positional Encoding, Attention Mechanism, Activation Function, Normalization and Otimizer are the same as LLaMA, so we can use the same defaults.
+    # Positional Encoding: RoPE
+    # Attention Mechanism: Grouped Query Attention (GQA)
+    # Activation Function: SwiGLU
+    # Normalization: RMSNorm
+    # Optimizer: AdamW
 
     def __init__(self, **kwargs):
         kwargs.setdefault("vocab_size", 50304)

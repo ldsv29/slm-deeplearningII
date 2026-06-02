@@ -7,7 +7,7 @@ class FineWebEduDataset(IterableDataset):
     def __init__(self, seq_len=1024):
         self.seq_len = seq_len
         self.enc = tiktoken.get_encoding("gpt2")
-        self.eot = self.enc.eot_token  # 50256
+        self.eot = self.enc.eot_token  
 
     def __iter__(self):
         buffer = []
