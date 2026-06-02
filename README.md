@@ -32,11 +32,25 @@ Trabalho 2 — Deep Learning II — PUCRS 2026/1.
 | `max_position_embeddings` | 1024 |
 | Parâmetros treináveis | ~101.5M (com weight tying) |
 
-### Scaling Law (Chinchilla)
+### Tamanho do dataset — Chinchilla Scaling Law
 
-101.5M params × 20 ≈ **2B tokens** de treinamento ótimo.  
-Este experimento usa o subconjunto `sample-10BT` do FineWeb-Edu com 7630 steps
-(~2B tokens com batch efetivo de 262.144 tokens/step).
+O número de tokens consumidos no treino é calculado pelos hiperparâmetros:
+
+```
+batch_por_GPU × grad_accum × nº_GPUs × seq_len × max_steps
+     16        ×     16     ×    2    ×  1024   ×   7630   ≈ 4B tokens
+```
+
+A Chinchilla Scaling Law estabelece que o número ótimo de tokens é **~20× o número de parâmetros**:
+
+```
+101.564.160 params × 20 ≈ 2B tokens
+```
+
+Treinamos com **~4B tokens**, ou seja, **2× o ótimo Chinchilla**. Isso segue a estratégia
+do **LLaMA 1** (Touvron et al., 2023): para modelos usados em inferência, vale ultrapassar
+o ótimo Chinchilla — um modelo menor treinado por mais tempo é mais eficiente em inferência
+do que um modelo maior treinado pelo mínimo ótimo, sem aumento no custo de uso.
 
 ---
 
