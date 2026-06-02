@@ -2,7 +2,7 @@ import json
 import matplotlib.pyplot as plt
 
 # o Trainer salva isso em checkpoints/trainer_state.json
-with open("/home/ap212/slm-deeplearningII/checkpoints/checkpoint-7630/trainer_state.json") as f:
+with open("checkpoints\\last-checkpoint\\trainer_state.json") as f:
     state = json.load(f)
 
 steps, losses = [], []
@@ -17,5 +17,5 @@ plt.xlabel("Step")
 plt.ylabel("Loss")
 plt.title("Pre-training Loss")
 plt.grid(True)
-plt.savefig("loss_curve_second_run.png", dpi=150)
+plt.savefig("loss_curve.png", dpi=150)
 plt.show()
