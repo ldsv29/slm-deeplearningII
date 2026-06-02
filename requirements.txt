@@ -1,8 +1,8 @@
-torch
-transformers
+torch==2.4.0
+transformers==4.44.0
+accelerate==0.34.0
 datasets
 tiktoken
-accelerate
 huggingface_hub
 matplotlib
 tqdm

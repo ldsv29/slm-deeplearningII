@@ -4,14 +4,14 @@ from dataset_streaming import FineWebEduDataset
 
 config = SLMConfig()
 model = SLMModel(config)
-dataset = FineWebEduDataset(seq_len=config.max_seq_len)
+dataset = FineWebEduDataset(seq_len=config.max_position_embeddings)
 
 args = TrainingArguments(
     output_dir="checkpoints",
     per_device_train_batch_size=16,
     gradient_accumulation_steps=16,
     bf16=True,
-    max_steps=3815,
+    max_steps=7630,
     learning_rate=3e-4,
     lr_scheduler_type="cosine",
     warmup_steps=200,
