@@ -15,6 +15,6 @@ source /scratch/ap212/slm/.venv/bin/activate
 
 cd /home/ap212/slm-deeplearningII
 
-torchrun --nproc_per_node=2 train.py
+torchrun --nproc_per_node=2 midtraining.py
 
 echo "Job finalizado em $(date)"
