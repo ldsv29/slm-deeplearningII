@@ -5,7 +5,7 @@ from config import SLMConfig, SLMModel
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 # carrega o modelo do checkpoint
-model = SLMModel.from_pretrained("checkpoints/checkpoint-7630")
+model = SLMModel.from_pretrained("ldsv29/slm-midtraining")
 model.eval()
 model.to(device)
 
@@ -13,9 +13,7 @@ model.to(device)
 tokenizer = AutoTokenizer.from_pretrained("gpt2")
 
 prompts = [
-    "The future of artificial intelligence",
-    "In the beginning of the universe",
-    "The most important discovery in science",
+    """prompt = "<|im_start|>user\nWhat is the capital of France?<|im_end|>\n<|im_start|>assistant\n"""
 ]
 
 for prompt in prompts:

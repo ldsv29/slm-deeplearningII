@@ -33,7 +33,7 @@ class MidTrainingDataset(IterableDataset):
 
     def __iter__(self):
         smoltalk = load_dataset("HuggingFaceTB/smoltalk", "all", split="train", streaming=True)
-        gsm8k    = load_dataset("openai/gsm8k", "main", split="train", streaming=True)
+        gsm8k = load_dataset("openai/gsm8k", "main", split="train", streaming=True)
 
         buffer = []
 
