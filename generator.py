@@ -22,7 +22,7 @@ for prompt in prompts:
     with torch.no_grad():
         output = model.generate(
             **inputs,
-            max_new_tokens=100,
+            max_new_tokens=25,
             temperature=0.8,
             top_k=50,
             do_sample=True,

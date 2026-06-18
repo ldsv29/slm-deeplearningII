@@ -8,3 +8,4 @@ matplotlib
 tqdm
 pyyaml
 python-dotenv
+streamlit

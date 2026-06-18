@@ -11,10 +11,11 @@ dataset = SFTDataset(seq_len=config.max_position_embeddings)
 
 args = TrainingArguments(
     output_dir="checkpoints_sft",
+    save_strategy="no",
     per_device_train_batch_size=16,
     gradient_accumulation_steps=8,
     bf16=True,
-    max_steps=500=,
+    max_steps=500,
     learning_rate=2e-5,
     lr_scheduler_type="cosine",
     warmup_steps=50,
@@ -28,7 +29,7 @@ args = TrainingArguments(
     report_to="none",
     push_to_hub=True,
     hub_model_id="ldsv29/slm-sft",
-    hub_strategy="checkpoint",
+    hub_strategy="every_save",
 )
 
 trainer = Trainer(
