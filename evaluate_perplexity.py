@@ -71,8 +71,9 @@ def calculate_perplexity(model_id: str, n_batches: int = 50) -> float:
 
 if __name__ == "__main__":
     models = {
-        "pós pré-treino":  "ldsv29/slm-pretrained",
+        "pós pré-treino":   "ldsv29/slm-pretrained",
         "pós mid-training": "ldsv29/slm-midtraining",
+        "pós SFT":          "ldsv29/slm-sft",
     }
 
     for stage, model_id in models.items():

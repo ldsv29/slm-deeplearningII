@@ -1,9 +1,13 @@
-# SLM — Small Language Model (Pré-treino)
+# SLM — Small Language Model
 
 Transformer decoder-only treinado do zero no dataset FineWeb-Edu.  
 Trabalho 2 — Deep Learning II — PUCRS 2026/1.
 
-**Modelo publicado:** [ldsv29/slm-pretrained](https://huggingface.co/ldsv29/slm-pretrained)
+| Etapa | Modelo publicado |
+|---|---|
+| Pré-treino | [ldsv29/slm-pretrained](https://huggingface.co/ldsv29/slm-pretrained) |
+| Mid-Training | [ldsv29/slm-midtraining](https://huggingface.co/ldsv29/slm-midtraining) |
+| SFT | [ldsv29/slm-sft](https://huggingface.co/ldsv29/slm-sft) |
 
 ---
 
@@ -58,17 +62,25 @@ do que um modelo maior treinado pelo mínimo ótimo, sem aumento no custo de uso
 
 ```
 .
-├── config.py              # Arquitetura: SLMConfig + SLMModel
-├── dataset_streaming.py   # Dataset FineWeb-Edu com streaming
-├── train.py               # Loop de treino com HuggingFace Trainer
-├── smoke_test.py          # Sanity check local (CPU, sem dados reais)
-├── generator.py           # Geração de texto a partir de checkpoint
-├── model_download.py      # Download do modelo do HuggingFace Hub
-├── plot_loss.py           # Plota curva de loss do trainer_state.json
-├── job_train.sh           # Script SLURM para execução no cluster
-├── requirements.txt       # Dependências Python
-└── loss_curve.png         # Curva de loss gerada após o treino
+├── config.py                  # Arquitetura: SLMConfig + SLMModel
+├── dataset_streaming.py       # Dataset FineWeb-Edu com streaming (pré-treino)
+├── dataset_midtraining.py     # SmolTalk + GSM8K com streaming (mid-training)
+├── dataset_sft.py             # SmolTalk com loss mask (SFT)
+├── train.py                   # Pré-treino com HuggingFace Trainer
+├── midtraining.py             # Mid-training a partir do slm-pretrained
+├── sft.py                     # SFT a partir do slm-midtraining
+├── evaluate_perplexity.py     # Perplexidade nas 3 etapas
+├── evaluate_benchmark.py      # HellaSwag accuracy nas 3 etapas
+├── app.py                     # Demo chat com Streamlit
+├── smoke_test.py              # Sanity check local
+├── plot_loss.py               # Plota curva de loss
+├── job_train.sh               # Script SLURM — pré-treino
+├── job_midtrain.sh            # Script SLURM — mid-training
+├── job_sft.sh                 # Script SLURM — SFT
+└── requirements.txt           # Dependências Python
 ```
+
+> Os checkpoints não estão versionados no git. Os modelos treinados estão publicados no HuggingFace Hub (links no topo).
 
 ---
 
@@ -102,104 +114,123 @@ HUGGINFACE_TOKEN=hf_seu_token_aqui
 O token é necessário para push de checkpoints durante o treino e para download do modelo.  
 Obtenha em: [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)
 
-Para autenticar no CLI:
-
-```bash
-hf auth login
-```
-
 ---
 
-## Execução
+## Pipeline de Treino
 
-### 1. Smoke test (sanidade local, sem GPU)
+### Etapa 1 — Pré-treino
 
-Verifica se o modelo e o trainer funcionam corretamente com dados sintéticos em CPU.
-
-```bash
-python smoke_test.py
-```
-
-Esperado: loss caindo de ~10 para ~0 em 200 steps. Duração: ~30 minutos em CPU.
-
----
-
-### 2. Pré-treino no cluster (SLURM)
-
-No servidor, configure o ambiente da mesma forma que localmente: clone o repositório,
-crie e ative a venv, instale as dependências do `requirements.txt` e configure o `.env`
-com o token do HuggingFace. Em seguida, submeta o job:
+Dataset FineWeb-Edu com streaming. Submeta o job no cluster:
 
 ```bash
 sbatch job_train.sh
 ```
 
-O script usa `torchrun` com 2 GPUs e o Trainer faz push automático de checkpoints
-para o HuggingFace Hub a cada 500 steps (`hub_strategy="checkpoint"`).
-
-#### Retomar de checkpoint
-
-Se o job for interrompido, edite `train.py` e passe o checkpoint para o Trainer:
-
-```python
-trainer.train(resume_from_checkpoint=True)
-```
-
-O Trainer detecta automaticamente o último checkpoint salvo em `checkpoints/`.
-
----
-
-### 3. Download do modelo treinado
-
-Baixa o modelo publicado do HuggingFace Hub para a pasta `checkpoints/`:
-
-```bash
-python model_download.py
-```
-
-Requer `HUGGINFACE_TOKEN` no `.env`.
-
----
-
-### 4. Geração de texto
-
-Gera texto a partir de prompts usando o checkpoint local:
-
-```bash
-python generator.py
-```
-
-O script carrega `checkpoints/checkpoint-7630`, tokeniza os prompts com o tokenizer
-do GPT-2 e gera até 100 novos tokens com `temperature=0.8` e `top_k=50`.
-
----
-
-### 5. Plotar curva de loss
-
-Após o treino, gera o gráfico `loss_curve.png` a partir dos logs do Trainer:
-
-```bash
-python plot_loss.py
-```
-
-Lê `checkpoints/last-checkpoint/trainer_state.json` e salva o gráfico na raiz do projeto.
-
-![Loss Curve](loss_curve.png)
-
----
-
-## Configuração de treino
-
 | Parâmetro | Valor |
 |---|---|
 | `per_device_train_batch_size` | 16 |
 | `gradient_accumulation_steps` | 16 |
-| Batch efetivo (2 GPUs) | 16 × 16 × 2 = 512 sequências = 524.288 tokens |
+| Batch efetivo (2 GPUs) | 524.288 tokens |
 | `max_steps` | 7630 |
 | `learning_rate` | 3e-4 |
-| `lr_scheduler_type` | cosine |
 | `warmup_steps` | 200 |
-| `weight_decay` | 0.1 |
-| `bf16` | True |
 | Hardware | 2× RTX A5000 24GB |
 | Loss final | ~5.0 |
+
+---
+
+### Etapa 2 — Mid-Training
+
+Fine-tuning sobre `ldsv29/slm-pretrained` com SmolTalk + GSM8K em formato chat.
+
+```bash
+sbatch job_midtrain.sh
+```
+
+| Parâmetro | Valor |
+|---|---|
+| `max_steps` | 300 |
+| `learning_rate` | 1e-4 |
+| Loss final | ~3.1 |
+
+---
+
+### Etapa 3 — SFT (Supervised Fine-Tuning)
+
+Fine-tuning sobre `ldsv29/slm-midtraining` com SmolTalk usando loss mask nos tokens do usuário — o modelo aprende apenas a gerar as respostas do assistant.
+
+```bash
+sbatch job_sft.sh
+```
+
+| Parâmetro | Valor |
+|---|---|
+| `max_steps` | 500 |
+| `learning_rate` | 2e-5 |
+| Loss final | ~2.2 |
+
+#### Retomar de checkpoint
+
+Se o job for interrompido, passe o checkpoint para o Trainer:
+
+```python
+trainer.train(resume_from_checkpoint="checkpoints_sft/checkpoint-200")
+```
+
+---
+
+## Avaliação
+
+### Perplexidade
+
+Medida sobre FineWeb-Edu (texto bruto). Menor = melhor.
+
+```bash
+python evaluate_perplexity.py
+```
+
+| Etapa | Perplexidade |
+|---|---|
+| Pré-treino | 150.32 |
+| Mid-Training | 192.03 |
+| SFT | 2178.94 |
+
+*O aumento pós-SFT é um artefato de distribuição: o modelo passou a esperar formato chat (`<|im_start|>user...`), tornando PPL em texto bruto uma métrica inadequada para essa etapa.
+
+### HellaSwag (Benchmark)
+
+Commonsense reasoning — escolha da continuação mais provável entre 4 opções via log-prob scoring. Baseline aleatório = 25%.
+
+```bash
+python evaluate_benchmark.py
+```
+
+| Etapa | Acurácia |
+|---|---|
+| Pré-treino | 28% |
+| Mid-Training | 30% |
+| SFT | **34%** (acima do GPT-2 117M ~31–33%) |
+
+---
+
+## Demo — Interface Chat
+
+```bash
+pip install streamlit
+streamlit run app.py
+```
+
+Interface Streamlit com sidebar de parâmetros ajustáveis: temperature, top-k, top-p e max new tokens. O histórico completo da conversa é concatenado no prompt a cada turno (contexto de até 1024 tokens).
+
+---
+
+## Curvas de Loss
+
+**Pré-treino:**
+![Loss Curve](loss_curve.png)
+
+**Mid-Training:**
+![Loss Curve Mid-Training](loss_curve_midtraining.png)
+
+**SFT:**
+![Loss Curve SFT](loss_curve_sft.png)

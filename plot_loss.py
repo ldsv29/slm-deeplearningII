@@ -2,7 +2,7 @@ import json
 import matplotlib.pyplot as plt
 
 # o Trainer salva isso em checkpoints/trainer_state.json
-with open("checkpoints\\last-checkpoint\\trainer_state.json") as f:
+with open("checkpoint-200.json") as f:
     state = json.load(f)
 
 steps, losses = [], []
@@ -15,7 +15,7 @@ plt.figure(figsize=(10, 5))
 plt.plot(steps, losses)
 plt.xlabel("Step")
 plt.ylabel("Loss")
-plt.title("Pre-training Loss")
+plt.title("SFT Loss")
 plt.grid(True)
-plt.savefig("loss_curve.png", dpi=150)
+plt.savefig("loss_curve_sft.png", dpi=150)
 plt.show()

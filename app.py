@@ -3,7 +3,7 @@ import streamlit as st
 from transformers import AutoTokenizer
 from config import SLMConfig, SLMModel
 
-MODEL_ID = "ldsv29/slm-midtraining"
+MODEL_ID = "ldsv29/slm-sft"
 
 @st.cache_resource
 def load_model():
